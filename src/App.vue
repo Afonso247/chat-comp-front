@@ -102,7 +102,7 @@
         </div>
       </div>
 
-      <div v-if="voted" class="success-section">
+      <div v-if="voted" class="success-section" ref="successSection" tabindex="-1">
         <div class="success-animation">
           <div class="success-circle">
             <div class="checkmark">✓</div>
@@ -180,6 +180,16 @@ export default {
           chosenResponseType: responseType,
         })
         this.voted = true
+
+        await this.$nextTick()
+
+        if (this.$refs.successSection) {
+          this.$refs.successSection.focus()
+          this.$refs.successSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }
       } catch (error) {
         console.error(error)
         alert('Erro ao registrar sua escolha. Por favor, tente novamente.')
@@ -358,7 +368,7 @@ body {
   border-radius: var(--radius-md);
   font-size: 1rem;
   font-family: inherit;
-  color: #f3f3f3;
+  color: var(--text-primary);
   resize: vertical;
   transition: all 0.3s ease;
   background: var(--surface);
@@ -687,6 +697,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  outline: none;
+  scroll-margin-top: 2rem;
+}
+
+.success-section:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
 }
 
 @keyframes fadeInUp {
