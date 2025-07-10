@@ -39,7 +39,7 @@
         </button>
       </div>
 
-      <div v-if="loading" class="loading-section">
+      <div v-if="loading" class="loading-section" ref="loadingSection" tabindex="-1">
         <div class="loading-animation">
           <div class="loading-dots">
             <div></div>
@@ -53,7 +53,12 @@
         </div>
       </div>
 
-      <div v-else-if="responses.length" class="responses-section">
+      <div
+        v-else-if="responses.length"
+        class="responses-section"
+        ref="responsesSection"
+        tabindex="-1"
+      >
         <div class="instructions-card">
           <div class="instructions-icon">🔍</div>
           <div class="instructions-content">
@@ -155,12 +160,32 @@ export default {
       this.responses = []
       this.selectedResponse = null
 
+      // Foca na seção de loading após iniciar o carregamento
+      await this.$nextTick()
+      if (this.$refs.loadingSection) {
+        this.$refs.loadingSection.focus()
+        this.$refs.loadingSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+      }
+
       try {
         const response = await axios.post('http://localhost:4000/api/responses', {
           prompt: this.prompt,
         })
         // Embaralha as respostas para garantir anonimato
         this.responses = this.shuffleArray(response.data.responses)
+
+        // Foca na seção de respostas após carregar
+        await this.$nextTick()
+        if (this.$refs.responsesSection) {
+          this.$refs.responsesSection.focus()
+          this.$refs.responsesSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }
       } catch (error) {
         console.error(error)
         alert('Erro ao gerar respostas. Por favor, tente novamente.')
@@ -448,6 +473,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  outline: none;
+  scroll-margin-top: 2rem;
+}
+
+.loading-section:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
 }
 
 .loading-animation {
@@ -502,6 +534,14 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  outline: none;
+  scroll-margin-top: 2rem;
+}
+
+.responses-section:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
 }
 
 /* Instructions Card */
