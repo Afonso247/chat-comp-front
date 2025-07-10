@@ -171,8 +171,7 @@ export default {
       }
 
       try {
-        console.log(`${process.env.VUE_APP_API_URL}/api/responses`)
-        const response = await axios.post(`${process.env.VUE_APP_API_URL}/api/responses`, {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/responses`, {
           prompt: this.prompt,
         })
         // Embaralha as respostas para garantir anonimato
@@ -201,7 +200,7 @@ export default {
       await new Promise((resolve) => setTimeout(resolve, 800))
 
       try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/votes`, {
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/votes`, {
           prompt: this.prompt,
           chosenResponseType: responseType,
         })
