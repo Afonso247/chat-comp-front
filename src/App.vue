@@ -171,7 +171,6 @@ export default {
       }
 
       try {
-        console.log(`${import.meta.env.VITE_API_URL}/api/responses`)
         const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/responses`, {
           prompt: this.prompt,
         })
