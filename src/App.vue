@@ -358,6 +358,7 @@ body {
   border-radius: var(--radius-md);
   font-size: 1rem;
   font-family: inherit;
+  color: #f3f3f3;
   resize: vertical;
   transition: all 0.3s ease;
   background: var(--surface);
