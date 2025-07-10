@@ -171,6 +171,7 @@ export default {
       }
 
       try {
+        console.log(`${process.env.VUE_APP_API_URL}/api/responses`)
         const response = await axios.post(`${process.env.VUE_APP_API_URL}/api/responses`, {
           prompt: this.prompt,
         })
