@@ -183,9 +183,7 @@
             </div>
 
             <div class="response-content">
-              <div class="content-text">
-                {{ response.content }}
-              </div>
+              <div class="content-text" v-html="formatText(response.content)"></div>
             </div>
 
             <div class="response-footer">
@@ -263,6 +261,7 @@
 
 <script>
 import axios from 'axios'
+import MarkdownIt from 'markdown-it'
 
 export default {
   data() {
@@ -335,6 +334,22 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    detectChatGptMarkdown(text) {
+      const patters = [
+        /^```/, // code blocks
+        /^#{1,6}\s/, // cabecalhos
+        /^[-*+]\s/, // listas
+        /\*\*(.*?)\*\*/, // negrito
+      ]
+
+      return patters.some((pattern) => pattern.test(text))
+    },
+    formatText(text) {
+      if (this.detectChatGptMarkdown(text)) {
+        return new MarkdownIt().render(text)
+      }
+      return text
     },
     selectResponse(responseType) {
       if (this.hasConfirmed) return
