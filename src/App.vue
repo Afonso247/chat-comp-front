@@ -367,6 +367,7 @@ export default {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/votes`, {
           prompt: this.prompt,
           chosenResponseType: this.selectedResponse,
+          responses: this.responses,
         })
 
         this.hasConfirmed = true
