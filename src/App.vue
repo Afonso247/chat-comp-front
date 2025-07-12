@@ -67,6 +67,7 @@
               <li>Leia ambas as respostas cuidadosamente</li>
               <li>Considere qual abordagem ressoa mais com você</li>
               <li>Clique na resposta que considera mais útil</li>
+              <li>Confirme sua escolha clicando no botão "Confirmar Resposta"</li>
             </ul>
           </div>
         </div>
@@ -76,10 +77,11 @@
             v-for="(response, index) in responses"
             :key="index"
             class="response-card"
-            @click="vote(response.type)"
+            @click="selectResponse(response.type)"
             :class="{
               selected: selectedResponse === response.type,
               'fade-out': selectedResponse && selectedResponse !== response.type,
+              disabled: hasConfirmed,
             }"
           >
             <div class="response-header">
@@ -100,8 +102,48 @@
 
             <div class="response-footer">
               <div class="response-actions">
-                <span class="action-hint">Clique para selecionar esta resposta</span>
+                <span v-if="!hasConfirmed" class="action-hint">
+                  {{
+                    selectedResponse === response.type
+                      ? 'Resposta selecionada'
+                      : 'Clique para selecionar esta resposta'
+                  }}
+                </span>
+                <span v-else class="action-hint">
+                  {{
+                    selectedResponse === response.type ? 'Resposta confirmada' : 'Não selecionada'
+                  }}
+                </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="selectedResponse && !hasConfirmed" class="confirmation-section">
+          <div class="confirmation-card">
+            <div class="confirmation-icon">⚠️</div>
+            <div class="confirmation-content">
+              <h3>Confirmar sua escolha</h3>
+              <p>
+                Você selecionou uma resposta. Deseja confirmar esta escolha? Esta ação não poderá
+                ser desfeita.
+              </p>
+            </div>
+            <div class="confirmation-actions">
+              <button @click="confirmResponse" :disabled="confirmingVote" class="confirm-btn">
+                <span v-if="confirmingVote" class="btn-loading">
+                  <div class="btn-spinner"></div>
+                  Confirmando...
+                </span>
+                <span v-else class="btn-content">
+                  <span class="btn-icon">✅</span>
+                  Confirmar Resposta
+                </span>
+              </button>
+              <button @click="cancelSelection" class="cancel-btn">
+                <span class="btn-icon">❌</span>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
@@ -142,6 +184,8 @@ export default {
       loading: false,
       voted: false,
       selectedResponse: null,
+      hasConfirmed: false,
+      confirmingVote: false,
     }
   },
   methods: {
@@ -159,6 +203,8 @@ export default {
       this.loading = true
       this.responses = []
       this.selectedResponse = null
+      this.hasConfirmed = false
+      this.voted = false
 
       // Foca na seção de loading após iniciar o carregamento
       await this.$nextTick()
@@ -193,17 +239,25 @@ export default {
         this.loading = false
       }
     },
-    async vote(responseType) {
+    selectResponse(responseType) {
+      if (this.hasConfirmed) return
       this.selectedResponse = responseType
+    },
+    cancelSelection() {
+      this.selectedResponse = null
+    },
+    async confirmResponse() {
+      if (!this.selectedResponse || this.hasConfirmed) return
 
-      // Pequeno delay para melhor experiência do usuário
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      this.confirmingVote = true
 
       try {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/votes`, {
           prompt: this.prompt,
-          chosenResponseType: responseType,
+          chosenResponseType: this.selectedResponse,
         })
+
+        this.hasConfirmed = true
         this.voted = true
 
         await this.$nextTick()
@@ -218,6 +272,8 @@ export default {
       } catch (error) {
         console.error(error)
         alert('Erro ao registrar sua escolha. Por favor, tente novamente.')
+      } finally {
+        this.confirmingVote = false
       }
     },
     reset() {
@@ -225,6 +281,8 @@ export default {
       this.responses = []
       this.voted = false
       this.selectedResponse = null
+      this.hasConfirmed = false
+      this.confirmingVote = false
     },
   },
 }
@@ -238,6 +296,8 @@ export default {
   --secondary: #48bb78;
   --secondary-light: #68d391;
   --accent: #ed8936;
+  --warning: #f6ad55;
+  --danger: #f56565;
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
   --text-muted: #718096;
@@ -592,7 +652,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   width: 100%;
   max-width: 1200px;
   justify-items: center;
@@ -610,7 +670,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.response-card:hover {
+.response-card:hover:not(.disabled) {
   transform: translateY(-5px);
   box-shadow: var(--shadow-xl);
   border-color: var(--primary);
@@ -625,6 +685,17 @@ body {
 .response-card.fade-out {
   opacity: 0.6;
   transform: scale(0.98);
+}
+
+.response-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.response-card.disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
 }
 
 .response-header {
@@ -722,6 +793,116 @@ body {
   color: var(--text-muted);
   font-size: 0.9rem;
   font-style: italic;
+}
+
+/* Confirmation Section */
+.confirmation-section {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 3rem;
+}
+
+.confirmation-card {
+  background: var(--surface);
+  border: 2px solid var(--warning);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideInUp 0.5s ease;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirmation-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: pulse 2s infinite;
+}
+
+.confirmation-content {
+  margin-bottom: 2rem;
+}
+
+.confirmation-content h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.confirmation-content p {
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.confirm-btn {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: var(--secondary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.cancel-btn:hover {
+  background: #e53e3e;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Success Section */
@@ -843,6 +1024,17 @@ body {
     text-align: center;
     max-width: 600px;
   }
+
+  .confirmation-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .confirm-btn,
+  .cancel-btn {
+    width: 100%;
+    max-width: 250px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -887,6 +1079,10 @@ body {
   .responses-grid {
     max-width: 100%;
   }
+
+  .confirmation-card {
+    padding: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -909,6 +1105,16 @@ body {
 
   .input-section {
     padding: 1rem;
+  }
+
+  .confirmation-actions {
+    gap: 0.5rem;
+  }
+
+  .confirm-btn,
+  .cancel-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
   }
 }
 
