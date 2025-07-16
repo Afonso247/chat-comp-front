@@ -1,5 +1,93 @@
 <template>
-  <div class="app-container">
+  <!-- Consent Screen -->
+  <div class="consent-container" v-if="!consentGiven">
+    <div class="consent-content">
+      <h2>📝 TERMO DE CONSENTIMENTO LIVRE E ESCLARECIDO</h2>
+      <p v-if="!showConsentText" @click="toggleConsentText" class="toggle-consent">
+        Abrir o termo <span>▼</span>
+      </p>
+      <p v-else @click="toggleConsentText" class="toggle-consent">Fechar o termo <span>▲</span></p>
+      <div v-show="showConsentText" class="consent-dropdown">
+        <div class="consent-text">
+          <p>
+            O(A) Senhor(a) está sendo convidado(a) a participar de uma pesquisa. Por favor, leia
+            este documento com bastante atenção antes de assiná-lo. Caso haja alguma palavra ou
+            frase que o(a) senhor(a) não consiga entender, converse com o pesquisador responsável
+            pelo estudo ou com um membro da equipe desta pesquisa para esclarecê-los.
+          </p>
+          <p>
+            A proposta deste termo de consentimento livre e esclarecido (TCLE) é explicar tudo sobre
+            o estudo e solicitar a sua permissão para participar do mesmo.
+          </p>
+          <p>
+            O objetivo desta pesquisa é Promover a democratização do acesso aos cursos de Tecnologia
+            da Informação do Campus Igarassu através de um conjunto de ações que integram a
+            extensão, o ensino e a pesquisa de forma indissociável e tem como justificativa promover
+            o conhecimento sobre os cursos de Tecnologia da Informação do Campus Igarassu.
+          </p>
+          <p>
+            Se o(a) Sr.(a) aceitar participar da pesquisa, os procedimentos envolvidos em sua
+            participação são os seguintes: Coleta de dados anônimos sobre o perfil do estudante e
+            sua avaliação do material didático utilizado nos componentes curriculares de introdução
+            à programação Campus Igarassu.
+          </p>
+          <p>
+            Toda pesquisa com seres humanos envolve algum tipo de risco. No nosso estudo, os
+            possíveis riscos ou desconfortos decorrentes da participação na pesquisa são quebra do
+            sigilo e confidencialidade dos dados.
+          </p>
+          <p>
+            Contudo, esta pesquisa também pode trazer benefícios. Os possíveis benefícios
+            resultantes da participação na pesquisa são melhoria do material didático nos
+            componentes curriculares de introdução à programação Campus Igarassu e democratização do
+            conhecimento sobre o que se estuda nos cursos de tecnologia da informação do Campus
+            Igarassu.
+          </p>
+          <p>
+            Sua participação na pesquisa é totalmente voluntária, ou seja, não é obrigatória. Caso
+            o(a) Sr.(a) decida não participar, ou ainda, desistir de participar e retirar seu
+            consentimento durante a pesquisa, não haverá nenhum prejuízo à avaliação curricular que
+            você recebe ou possa vir a receber na instituição.
+          </p>
+          <p>
+            Não está previsto nenhum tipo de pagamento pela sua participação na pesquisa e o(a)
+            Sr.(a) não terá nenhum custo com respeito aos procedimentos envolvidos.
+          </p>
+          <p>
+            Caso ocorra algum problema ou dano com o(a) Sr.(a), resultante de sua participação na
+            pesquisa, o(a) Sr.(a) receberá todo o atendimento necessário, sem nenhum custo pessoal e
+            garantimos indenização diante de eventuais fatos comprovados, com nexo causal com a
+            pesquisa.
+          </p>
+          <p>
+            Solicitamos também sua autorização para apresentar os resultados deste estudo em eventos
+            das áreas dos cursos do Campus Igarassu, em revista científica nacional e/ou
+            internacional. Por ocasião da publicação dos resultados, seus dados pessoais serão
+            mantidos em sigilo absoluto, bem como em todas fases da pesquisa.
+          </p>
+          <p>
+            É assegurada a assistência durante toda pesquisa, bem como é garantido ao Sr.(a), o
+            livre acesso a todas as informações e esclarecimentos adicionais sobre o estudo e suas
+            consequências, enfim, tudo o que o(a) Sr.(a) queira saber antes, durante e depois da sua
+            participação.
+          </p>
+          <p>
+            Caso o(a) Sr.(a) tenha dúvidas, poderá entrar em contato com o pesquisador responsável
+            Allan Diego Silva Lima, pelo telefone 81 998581583, endereço BR-101, KM 29, Igarassu -
+            PE, 53659-899 e/ou pelo e-mail allan.lima@igarassu.ifpe.edu.br.
+          </p>
+        </div>
+      </div>
+      <p class="consent-confirm">
+        Ao pressionar o botão abaixo, você concorda em participar do estudo e autoriza o uso dos
+        dados inseridos neste aplicativo para fins de pesquisa.
+      </p>
+      <button class="consent-button" @click="handleConsent">Eu concordo</button>
+    </div>
+  </div>
+
+  <!-- Main App Screen -->
+  <div class="app-container" v-else>
     <div class="background-pattern"></div>
 
     <div class="container">
@@ -67,6 +155,7 @@
               <li>Leia ambas as respostas cuidadosamente</li>
               <li>Considere qual abordagem ressoa mais com você</li>
               <li>Clique na resposta que considera mais útil</li>
+              <li>Confirme sua escolha clicando no botão "Confirmar Resposta"</li>
             </ul>
           </div>
         </div>
@@ -76,10 +165,11 @@
             v-for="(response, index) in responses"
             :key="index"
             class="response-card"
-            @click="vote(response.type)"
+            @click="selectResponse(response.type)"
             :class="{
               selected: selectedResponse === response.type,
               'fade-out': selectedResponse && selectedResponse !== response.type,
+              disabled: hasConfirmed,
             }"
           >
             <div class="response-header">
@@ -93,15 +183,53 @@
             </div>
 
             <div class="response-content">
-              <div class="content-text">
-                {{ response.content }}
-              </div>
+              <div class="content-text" v-html="formatText(response.content)"></div>
             </div>
 
             <div class="response-footer">
               <div class="response-actions">
-                <span class="action-hint">Clique para selecionar esta resposta</span>
+                <span v-if="!hasConfirmed" class="action-hint">
+                  {{
+                    selectedResponse === response.type
+                      ? 'Resposta selecionada'
+                      : 'Clique para selecionar esta resposta'
+                  }}
+                </span>
+                <span v-else class="action-hint">
+                  {{
+                    selectedResponse === response.type ? 'Resposta confirmada' : 'Não selecionada'
+                  }}
+                </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="selectedResponse && !hasConfirmed" class="confirmation-section">
+          <div class="confirmation-card">
+            <div class="confirmation-icon">⚠️</div>
+            <div class="confirmation-content">
+              <h3>Confirmar sua escolha</h3>
+              <p>
+                Você selecionou uma resposta. Deseja confirmar esta escolha? Esta ação não poderá
+                ser desfeita.
+              </p>
+            </div>
+            <div class="confirmation-actions">
+              <button @click="confirmResponse" :disabled="confirmingVote" class="confirm-btn">
+                <span v-if="confirmingVote" class="btn-loading">
+                  <div class="btn-spinner"></div>
+                  Confirmando...
+                </span>
+                <span v-else class="btn-content">
+                  <span class="btn-icon">✅</span>
+                  Confirmar Resposta
+                </span>
+              </button>
+              <button @click="cancelSelection" class="cancel-btn">
+                <span class="btn-icon">❌</span>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
@@ -133,18 +261,30 @@
 
 <script>
 import axios from 'axios'
+import MarkdownIt from 'markdown-it'
 
 export default {
   data() {
     return {
+      consentGiven: false,
+      showConsentText: false,
       prompt: '',
       responses: [],
       loading: false,
       voted: false,
       selectedResponse: null,
+      hasConfirmed: false,
+      confirmingVote: false,
     }
   },
   methods: {
+    toggleConsentText() {
+      this.showConsentText = !this.showConsentText
+    },
+    handleConsent() {
+      this.consentGiven = true
+      localStorage.setItem('consentGiven', 'true')
+    },
     shuffleArray(array) {
       const shuffled = [...array]
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -159,6 +299,8 @@ export default {
       this.loading = true
       this.responses = []
       this.selectedResponse = null
+      this.hasConfirmed = false
+      this.voted = false
 
       // Foca na seção de loading após iniciar o carregamento
       await this.$nextTick()
@@ -193,17 +335,42 @@ export default {
         this.loading = false
       }
     },
-    async vote(responseType) {
-      this.selectedResponse = responseType
+    detectChatGptMarkdown(text) {
+      const patters = [
+        /^```/, // code blocks
+        /^#{1,6}\s/, // cabecalhos
+        /^[-*+]\s/, // listas
+        /\*\*(.*?)\*\*/, // negrito
+      ]
 
-      // Pequeno delay para melhor experiência do usuário
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      return patters.some((pattern) => pattern.test(text))
+    },
+    formatText(text) {
+      if (this.detectChatGptMarkdown(text)) {
+        return new MarkdownIt().render(text)
+      }
+      return text
+    },
+    selectResponse(responseType) {
+      if (this.hasConfirmed) return
+      this.selectedResponse = responseType
+    },
+    cancelSelection() {
+      this.selectedResponse = null
+    },
+    async confirmResponse() {
+      if (!this.selectedResponse || this.hasConfirmed) return
+
+      this.confirmingVote = true
 
       try {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/votes`, {
           prompt: this.prompt,
-          chosenResponseType: responseType,
+          chosenResponseType: this.selectedResponse,
+          responses: this.responses,
         })
+
+        this.hasConfirmed = true
         this.voted = true
 
         await this.$nextTick()
@@ -218,6 +385,8 @@ export default {
       } catch (error) {
         console.error(error)
         alert('Erro ao registrar sua escolha. Por favor, tente novamente.')
+      } finally {
+        this.confirmingVote = false
       }
     },
     reset() {
@@ -225,8 +394,16 @@ export default {
       this.responses = []
       this.voted = false
       this.selectedResponse = null
+      this.hasConfirmed = false
+      this.confirmingVote = false
     },
   },
+  // mounted() {
+  //   // Verificar localStorage para manter consentimento em futuras visitas
+  //   if (localStorage.getItem('consentGiven') === 'true') {
+  //     this.consentGiven = true
+  //   }
+  // },
 }
 </script>
 
@@ -238,6 +415,8 @@ export default {
   --secondary: #48bb78;
   --secondary-light: #68d391;
   --accent: #ed8936;
+  --warning: #f6ad55;
+  --danger: #f56565;
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
   --text-muted: #718096;
@@ -268,6 +447,64 @@ body {
   line-height: 1.6;
   color: var(--text-primary);
   background: var(--background);
+}
+
+/* Consent Screen */
+.consent-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--background);
+  padding: 1rem;
+}
+.consent-content {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: 1rem;
+  max-width: 600px;
+  text-align: center;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.consent-content h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.consent-content .toggle-consent {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 2rem auto;
+  width: 60%;
+  border: 2px solid var(--primary);
+  padding: 0.5rem;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.consent-content p {
+  font-size: 1rem;
+  margin: 1rem auto;
+}
+.consent-content .consent-confirm {
+  font-size: 1rem;
+  margin: 1rem auto;
+  font-weight: bold;
+}
+.consent-dropdown {
+  margin-top: 1rem;
+  transition: max-height 0.3s ease;
+}
+.consent-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  width: 70%;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 1rem;
+  cursor: pointer;
 }
 
 /* Container and Layout */
@@ -592,7 +829,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   width: 100%;
   max-width: 1200px;
   justify-items: center;
@@ -610,7 +847,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.response-card:hover {
+.response-card:hover:not(.disabled) {
   transform: translateY(-5px);
   box-shadow: var(--shadow-xl);
   border-color: var(--primary);
@@ -625,6 +862,17 @@ body {
 .response-card.fade-out {
   opacity: 0.6;
   transform: scale(0.98);
+}
+
+.response-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.response-card.disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
 }
 
 .response-header {
@@ -722,6 +970,116 @@ body {
   color: var(--text-muted);
   font-size: 0.9rem;
   font-style: italic;
+}
+
+/* Confirmation Section */
+.confirmation-section {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 3rem;
+}
+
+.confirmation-card {
+  background: var(--surface);
+  border: 2px solid var(--warning);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideInUp 0.5s ease;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirmation-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: pulse 2s infinite;
+}
+
+.confirmation-content {
+  margin-bottom: 2rem;
+}
+
+.confirmation-content h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.confirmation-content p {
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.confirm-btn {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: var(--secondary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.cancel-btn:hover {
+  background: #e53e3e;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Success Section */
@@ -843,6 +1201,17 @@ body {
     text-align: center;
     max-width: 600px;
   }
+
+  .confirmation-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .confirm-btn,
+  .cancel-btn {
+    width: 100%;
+    max-width: 250px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -887,6 +1256,10 @@ body {
   .responses-grid {
     max-width: 100%;
   }
+
+  .confirmation-card {
+    padding: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -909,6 +1282,16 @@ body {
 
   .input-section {
     padding: 1rem;
+  }
+
+  .confirmation-actions {
+    gap: 0.5rem;
+  }
+
+  .confirm-btn,
+  .cancel-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
   }
 }
 
