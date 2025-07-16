@@ -349,7 +349,17 @@ export default {
       if (this.detectChatGptMarkdown(text)) {
         return new MarkdownIt().render(text)
       }
-      return text
+      const paragraphs = text
+        .split(/\n{2,}/)
+        .map(
+          (block) =>
+            `<p>${block
+              .split('\n')
+              .map((line) => line.trim())
+              .join('<br/>')}</p>`,
+        )
+        .join('')
+      return paragraphs
     },
     selectResponse(responseType) {
       if (this.hasConfirmed) return
@@ -953,6 +963,10 @@ body {
   line-height: 1.7;
   color: var(--text-primary);
   font-size: 1rem;
+}
+
+.content-text p {
+  margin-bottom: 1em;
 }
 
 .response-footer {
