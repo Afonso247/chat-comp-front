@@ -336,14 +336,19 @@ export default {
       }
     },
     detectChatGptMarkdown(text) {
-      const patters = [
+      const patterns = [
         /^```/, // code blocks
-        /^#{1,6}\s/, // cabecalhos
+        /^#{1,6}\s/, // cabeçalhos
         /^[-*+]\s/, // listas
         /\*\*(.*?)\*\*/, // negrito
+        /\*(.*?)\*/, // itálico
+        /`([^`]+)`/, // código inline
+        /\[.*?\]\(.*?\)/, // links
+        /^\d+\.\s/, // listas numeradas
+        /^>\s/, // blockquotes
       ]
 
-      return patters.some((pattern) => pattern.test(text))
+      return patterns.some((pattern) => pattern.test(text))
     },
     formatText(text) {
       if (this.detectChatGptMarkdown(text)) {
@@ -960,13 +965,102 @@ body {
 }
 
 .content-text {
-  line-height: 1.7;
-  color: var(--text-primary);
+  /* tipografia agradável */
+  font-family: 'Open Sans', sans-serif;
   font-size: 1rem;
+  line-height: 1.6;
 }
 
+/* parágrafos já com espaçamento */
 .content-text p {
-  margin-bottom: 1em;
+  margin-bottom: 1.2em;
+}
+
+/* títulos */
+.content-text h1,
+.content-text h2,
+.content-text h3,
+.content-text h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  margin: 1.6em 0 0.6em;
+  line-height: 1.25;
+}
+.content-text h1 {
+  font-size: 2em;
+}
+.content-text h2 {
+  font-size: 1.75em;
+}
+.content-text h3 {
+  font-size: 1.5em;
+}
+.content-text h4 {
+  font-size: 1.25em;
+}
+
+/* listas */
+.content-text ul,
+.content-text ol {
+  margin: 1em 0 1em 1.5em;
+}
+.content-text li + li {
+  margin-top: 0.5em;
+}
+
+/* links */
+.content-text a {
+  color: #0366d6;
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition: border-color 0.2s;
+}
+.content-text a:hover {
+  border-color: currentColor;
+}
+
+/* blockquotes */
+.content-text blockquote {
+  border-left: 4px solid #ddd;
+  border-radius: 3px;
+  padding: 4px;
+  margin: 1.2em 0;
+  background: #fafafa;
+  color: #555;
+  font-style: italic;
+  text-align: center;
+}
+
+/* código inline e blocos */
+.content-text code {
+  background: #555;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.95em;
+}
+.content-text pre {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+.content-text pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 0.9em;
+}
+
+/* imagens */
+.content-text img {
+  max-width: 100%;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .response-footer {
