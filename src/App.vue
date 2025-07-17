@@ -20,10 +20,10 @@
             o estudo e solicitar a sua permissão para participar do mesmo.
           </p>
           <p>
-            O objetivo desta pesquisa é Promover a democratização do acesso aos cursos de Tecnologia
-            da Informação do Campus Igarassu através de um conjunto de ações que integram a
-            extensão, o ensino e a pesquisa de forma indissociável e tem como justificativa promover
-            o conhecimento sobre os cursos de Tecnologia da Informação do Campus Igarassu.
+            O objetivo desta pesquisa é conduzir um estudo comparativo para avaliar a percepção de
+            utilidade das respostas fornecidas por dois modelos de assistentes virtuais, com a
+            função de providenciar assistência terapêutica quando expostos à demandas de apoio
+            emocional e aconselhamento.
           </p>
           <p>
             Se o(a) Sr.(a) aceitar participar da pesquisa, os procedimentos envolvidos em sua
@@ -499,6 +499,9 @@ body {
 .consent-content p {
   font-size: 1rem;
   margin: 1rem auto;
+}
+.consent-text {
+  text-align: left;
 }
 .consent-content .consent-confirm {
   font-size: 1rem;
